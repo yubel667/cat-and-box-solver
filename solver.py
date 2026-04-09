@@ -1,6 +1,6 @@
 import sys
 import os
-from collections import deque
+import heapq
 from board import Board, PiecePlace, Location, FullBoardState
 from board_parser import parse_board_string
 
@@ -34,26 +34,34 @@ def get_neighbors(current_board: Board):
                         neighbors.append(new_board)
     return neighbors
 
-def solve_bfs(start_board: Board):
+def solve_prioritized_bfs(start_board: Board):
     """
-    Performs a Breadth-First Search to find the shortest path to a solution.
-    Returns the sequence of boards from start to solution, or None if not found.
+    Performs a Prioritized Breadth-First Search to find the shortest path.
+    Prioritizes states where more cats are captured first.
     """
-    # queue stores (current_board, path_to_current_board)
-    queue = deque([(start_board, [start_board])])
-    visited = {start_board.get_board_identifier()}
+    # Priority Queue stores (path_length, -cats_captured, tie_breaker, current_board, path)
+    # tie_breaker is used to avoid comparing Board objects if priorities are equal
+    counter = 0
+    pq = [(0, -start_board.cats_captured, counter, start_board, [start_board])]
+    visited = {start_board.get_board_identifier(): 0} # map ident to shortest path found
     
-    while queue:
-        current_board, path = queue.popleft()
+    while pq:
+        path_len, neg_cats, _, current_board, path = heapq.heappop(pq)
         
         if current_board.board_state == FullBoardState.SOLVED:
             return path
             
+        if path_len > visited.get(current_board.get_board_identifier(), float('inf')):
+            continue
+
         for neighbor in get_neighbors(current_board):
             ident = neighbor.get_board_identifier()
-            if ident not in visited:
-                visited.add(ident)
-                queue.append((neighbor, path + [neighbor]))
+            new_path_len = path_len + 1
+            
+            if new_path_len < visited.get(ident, float('inf')):
+                visited[ident] = new_path_len
+                counter += 1
+                heapq.heappush(pq, (new_path_len, -neighbor.cats_captured, counter, neighbor, path + [neighbor]))
                 
     return None
 
@@ -77,18 +85,20 @@ def main():
         print(f"Starting puzzle from question {question_num}...")
         print(start_board.debug_string())
         
-        print("Searching for the shortest solution using BFS...")
-        solution_path = solve_bfs(start_board)
+        print("Searching for the shortest solution with cat-capture priority...")
+        solution_path = solve_prioritized_bfs(start_board)
         
         if solution_path:
             print(f"\nSUCCESS! Found the shortest solution in {len(solution_path) - 1} moves.")
             for i, board in enumerate(solution_path):
-                print(f"Step {i}:")
+                print(f"Step {i} (Cats captured: {board.cats_captured}):")
                 print(board.debug_string())
         else:
             print("\nNo solution found.")
             
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"An error occurred: {e}")
         sys.exit(1)
 

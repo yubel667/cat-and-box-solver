@@ -124,7 +124,7 @@ class Board:
         assert len(self.pieces) <= 4
         assert len(set(p.id for p in self.pieces)) == len(self.pieces) 
         self.pieces.sort(key = lambda p: p.id)
-        self.board_state = self.compute_board_state()
+        self.board_state, self.cats_captured = self.compute_board_state()
 
     # Get unique identifer for the board state for DFS purpose to avoid stepping into the same state again.
     def get_board_identifier(self):
@@ -145,7 +145,7 @@ class Board:
         return Board(self.setup, [*self.pieces, piece])
 
     # check whether the board state is legal.
-    def compute_board_state(self) -> FullBoardState:
+    def compute_board_state(self) -> (FullBoardState, int):
         all_states = []
         for j in range(5):
             all_states.append([BoardState.NULL for i in range(5)])
@@ -163,7 +163,7 @@ class Board:
                 x = offset.x + cell.location.x
                 if not (0<=y<5 and 0<=x<5):
                     # piece out of boundary.
-                    return FullBoardState.INVALID
+                    return FullBoardState.INVALID, 0
                 t = cell.t
                 current_state = all_states[y][x]
                 # if it is box, can either be CAT or NULL.
@@ -175,18 +175,18 @@ class Board:
                     elif current_state == BoardState.NULL:
                         all_states[y][x] = BoardState.BOX               
                     else:
-                        return FullBoardState.INVALID
+                        return FullBoardState.INVALID, 0
                 else:
                     assert t == CellType.EMPTY
                     if current_state == BoardState.NULL:
                         all_states[y][x] = BoardState.EMPTY
                     else:
-                        return FullBoardState.INVALID
+                        return FullBoardState.INVALID, 0
         # everything is placed, so it is a success.
         if cat_in_box == num_cats:
-            return FullBoardState.SOLVED
+            return FullBoardState.SOLVED, cat_in_box
         else:
-            return FullBoardState.VALID
+            return FullBoardState.VALID, cat_in_box
 
     # string for visualizing the board.
     def debug_string(self) -> str:
