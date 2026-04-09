@@ -11,28 +11,71 @@ The goal of the puzzle is to move the four movable puzzle pieces until every cat
 3. **Valid Placement**: Pieces cannot overlap each other or the cats. Only the "Box" part of a piece can sit on top of a cat; the "Flat" parts cannot.
 4. **Goal**: All cats must be covered by boxes in the fewest moves possible.
 
-## Usage
+## Input Format
+Challenges are stored as ASCII text files in the `questions/` directory.
 
-### 1. Visualize a Challenge
-To see the initial state of a specific challenge (e.g., Challenge 60):
-```bash
-python3 main.py 60
+### Example (`questions/1.txt`):
+- `c`: Represents an uncovered cat.
+- `B`: Represents a "Box" part of a piece.
+- `*`: Represents a "Flat" part of a piece.
+- `-` and `|`: Represent connections between cells of the same piece.
+- `C`: Represents a cat covered by a box.
+
+```text
++---------+
+|c * *-B c|
+|  |   |  |
+|B-* c *  |
+|  |   |  |
+|  *-B *  |
+|         |
+|c * *-B-*|
+|  |     ||
+|*-B-* c *|
++---------+
 ```
 
-### 2. Solve a Challenge
+## Usage
+
+
+### Solve a Challenge
 To find the shortest path to the solution using the optimized BFS solver:
 ```bash
 python3 solver.py 60
 ```
-The solver will output the step-by-step board configurations and search statistics (states visited vs. unique invalid states ignored).
+
+### Sample Solver Output (Level 1)
+```text
+SUCCESS! Found the shortest solution in 4 moves.
+Step 0 (Cats captured: 0):
++---------+
+|c * *-B c|
+... (initial board) ...
+
+Step 4 (Cats captured: 5):
++<Solved>-+
+|C-*   *-C|
+|  |     ||
+|  *-C   C|
+|  |     ||
+|* *   *-*|
+||        |
+|C-*     *|
+||       ||
+|*   *-*-C|
++---------+
+
+------------------------------
+Search Statistics:
+  Valid states visited:   45
+  Unique Invalid states:  4404
+------------------------------
+```
 
 ## Implementation Details
 - **Shortest Path**: Uses Breadth-First Search (BFS) to guarantee the minimum number of moves.
-- **Priority Search**: Prioritizes states that capture more cats at each step to prune the search space effectively.
+- **Priority Search**: Prioritizes states that capture more cats at each step.
 - **Optimized Performance**: 
     - Uses **NumPy** for fast grid-state computations.
-    - **Precomputed Placements**: Only evaluates positions where pieces actually fit within the 5x5 boundary.
-    - **State Caching**: Maintains a cache of both visited valid states and unique invalid states to avoid redundant calculations.
-
-## Solver Efficiency
-For the most complex challenge (Level 60), the solver found the perfect **33-move solution** while only needing to visit ~230 valid states, demonstrating high search efficiency.
+    - **Precomputed Placements**: Only evaluates positions where pieces actually fit.
+    - **State Caching**: Maintains a cache of both visited valid states and unique invalid states.
