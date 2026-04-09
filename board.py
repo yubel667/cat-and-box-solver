@@ -116,6 +116,8 @@ class FullBoardState(Enum):
     INVALID = 2
     SOLVED = 3
 
+import numpy as np
+
 class Board:
     def __init__(self, setup: BoardSetup, pieces: List[PiecePlace]):
         self.setup = setup
@@ -146,43 +148,44 @@ class Board:
 
     # check whether the board state is legal.
     def compute_board_state(self) -> (FullBoardState, int):
-        all_states = []
-        for j in range(5):
-            all_states.append([BoardState.NULL for i in range(5)])
+        # Using numpy for faster computation.
+        # BoardState values: CAT=1, CAT_IN_BOX=2, BOX=3, EMPTY=4, NULL=5
+        grid = np.full((5, 5), BoardState.NULL.value, dtype=np.int8)
+        
         num_cats = len(self.setup.cats)
         cat_in_box = 0
-        # first place all cats.
+        
+        # Place cats.
         for cat in self.setup.cats:
-            all_states[cat.loc.y][cat.loc.x] = BoardState.CAT
-        # put down all pieces.
+            grid[cat.loc.y, cat.loc.x] = BoardState.CAT.value
+            
+        # Put down pieces.
         for piece in self.pieces:
             actual_piece = PIECE_MAP[piece.id, piece.orientation]
             offset = piece.loc
             for cell in actual_piece.cells:
                 y = offset.y + cell.location.y
                 x = offset.x + cell.location.x
-                if not (0<=y<5 and 0<=x<5):
-                    # piece out of boundary.
+                
+                if not (0 <= y < 5 and 0 <= x < 5):
                     return FullBoardState.INVALID, 0
-                t = cell.t
-                current_state = all_states[y][x]
-                # if it is box, can either be CAT or NULL.
-                # if it is empty, must be NULL
-                if t == CellType.BOX:
-                    if current_state == BoardState.CAT:
+                
+                current_val = grid[y, x]
+                if cell.t == CellType.BOX:
+                    if current_val == BoardState.CAT.value:
                         cat_in_box += 1
-                        all_states[y][x] = BoardState.CAT_IN_BOX
-                    elif current_state == BoardState.NULL:
-                        all_states[y][x] = BoardState.BOX               
+                        grid[y, x] = BoardState.CAT_IN_BOX.value
+                    elif current_val == BoardState.NULL.value:
+                        grid[y, x] = BoardState.BOX.value
                     else:
                         return FullBoardState.INVALID, 0
                 else:
-                    assert t == CellType.EMPTY
-                    if current_state == BoardState.NULL:
-                        all_states[y][x] = BoardState.EMPTY
+                    # CellType.EMPTY
+                    if current_val == BoardState.NULL.value:
+                        grid[y, x] = BoardState.EMPTY.value
                     else:
                         return FullBoardState.INVALID, 0
-        # everything is placed, so it is a success.
+                        
         if cat_in_box == num_cats:
             return FullBoardState.SOLVED, cat_in_box
         else:
