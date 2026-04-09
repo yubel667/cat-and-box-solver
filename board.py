@@ -95,8 +95,11 @@ class PiecePlace:
         self.orientation = orientation
 
     # Unique identifier representing the piece place
-    def get_identifer():
-        return "{id}{self.loc.y}{self.loc.x}{self.orientation}"
+    def get_identifer(self):
+        # This works because all the numbers are within range 0~9 (given a valid piece)
+        # note that the loc can only be 0~4 because we always use the central piece.
+        # oriential can only be 0 to 4
+        return f"{self.id}{self.loc.y}{self.loc.x}{self.orientation}"
 
 # representing the current board setup. it should be immutable.
 class BoardSetup:

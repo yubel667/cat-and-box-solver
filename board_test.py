@@ -21,6 +21,9 @@ class BoardTest(unittest.TestCase):
             PiecePlace(2, Location(4,1), 2),
             PiecePlace(3, Location(3,3), 0)
         ])
+
+        self.assertEqual(board.get_board_identifier(), "0112113324123330")
+
         debug_string = board.debug_string()
         print("debug board state:\n"+debug_string)
 
