@@ -76,6 +76,26 @@ def build_piece_map():
     return piece_map
 
 PIECE_MAP = build_piece_map()
+
+def get_valid_placements():
+    valid_placements = {}
+    for (piece_id, orientation), piece in PIECE_MAP.items():
+        valid_locs = []
+        for y in range(5):
+            for x in range(5):
+                in_bounds = True
+                for cell in piece.cells:
+                    ay, ax = y + cell.location.y, x + cell.location.x
+                    if not (0 <= ay < 5 and 0 <= ax < 5):
+                        in_bounds = False
+                        break
+                if in_bounds:
+                    valid_locs.append((y, x))
+        valid_placements[piece_id, orientation] = valid_locs
+    return valid_placements
+
+VALID_PLACEMENTS = get_valid_placements()
+
 def get_piece(id: int, orientation: int) -> Piece:
     return PIECE_MAP[id, orientation]
 

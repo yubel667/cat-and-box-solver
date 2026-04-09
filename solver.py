@@ -1,14 +1,14 @@
 import sys
 import os
 import heapq
-from board import Board, PiecePlace, Location, FullBoardState
+from board import Board, PiecePlace, Location, FullBoardState, VALID_PLACEMENTS
 from board_parser import parse_board_string
 
-def get_neighbors(current_board: Board, stats: dict):
+def get_neighbors(current_board: Board, stats: dict, visited: dict, invalid_visited: set):
     """
     Generates all possible boards reachable by moving exactly one piece 
     to a new valid position/orientation.
-    Updates the stats dictionary with invalid state counts.
+    Uses precomputed VALID_PLACEMENTS and caches invalid states.
     """
     neighbors = []
     # Try moving each of the pieces currently on the board
@@ -17,31 +17,36 @@ def get_neighbors(current_board: Board, stats: dict):
         # Get the other pieces that will remain stationary
         other_pieces = current_board.pieces[:i] + current_board.pieces[i+1:]
         
-        for y in range(5):
-            for x in range(5):
-                for orientation in range(4):
-                    # Skip if it's the exact same position and orientation
-                    if (y == piece_to_move.loc.y and 
-                        x == piece_to_move.loc.x and 
-                        orientation == piece_to_move.orientation):
-                        continue
-                        
-                    new_place = PiecePlace(piece_to_move.id, Location(y, x), orientation)
-                    
-                    # Create a new board with the moved piece
-                    new_board = Board(current_board.setup, other_pieces + [new_place])
-                    
-                    if new_board.board_state == FullBoardState.INVALID:
-                        stats['invalid_count'] += 1
-                    else:
-                        neighbors.append(new_board)
+        for orientation in range(4):
+            # Only iterate over locations where this piece/orientation actually fits in a 5x5 grid
+            for y, x in VALID_PLACEMENTS[piece_to_move.id, orientation]:
+                # Skip if it's the exact same position and orientation
+                if (y == piece_to_move.loc.y and 
+                    x == piece_to_move.loc.x and 
+                    orientation == piece_to_move.orientation):
+                    continue
+                
+                # We can construct a board identifier BEFORE creating the Board object to check caches
+                new_place = PiecePlace(piece_to_move.id, Location(y, x), orientation)
+                temp_pieces = sorted(other_pieces + [new_place], key=lambda p: p.id)
+                ident = "".join(p.get_identifer() for p in temp_pieces)
+                
+                if ident in visited or ident in invalid_visited:
+                    continue
+                
+                # Create a new board with the moved piece
+                new_board = Board(current_board.setup, temp_pieces)
+                
+                if new_board.board_state == FullBoardState.INVALID:
+                    invalid_visited.add(ident)
+                    stats['invalid_count'] += 1
+                else:
+                    neighbors.append(new_board)
     return neighbors
 
 def solve_prioritized_bfs(start_board: Board):
     """
-    Performs a Prioritized Breadth-First Search to find the shortest path.
-    Prioritizes states where more cats are captured first.
-    Returns (solution_path, stats)
+    Performs a Prioritized Breadth-First Search with optimized search space.
     """
     stats = {
         'visited_count': 0,
@@ -52,6 +57,7 @@ def solve_prioritized_bfs(start_board: Board):
     counter = 0
     pq = [(0, -start_board.cats_captured, counter, start_board, [start_board])]
     visited = {start_board.get_board_identifier(): 0} 
+    invalid_visited = set()
     
     while pq:
         path_len, neg_cats, _, current_board, path = heapq.heappop(pq)
@@ -63,7 +69,7 @@ def solve_prioritized_bfs(start_board: Board):
         if path_len > visited.get(current_board.get_board_identifier(), float('inf')):
             continue
 
-        for neighbor in get_neighbors(current_board, stats):
+        for neighbor in get_neighbors(current_board, stats, visited, invalid_visited):
             ident = neighbor.get_board_identifier()
             new_path_len = path_len + 1
             
@@ -94,7 +100,7 @@ def main():
         print(f"Starting puzzle from question {question_num}...")
         print(start_board.debug_string())
         
-        print("Searching for the shortest solution with cat-capture priority...")
+        print("Searching for the shortest solution with optimized search...")
         solution_path, stats = solve_prioritized_bfs(start_board)
         
         if solution_path:
@@ -108,7 +114,7 @@ def main():
         print("-" * 30)
         print("Search Statistics:")
         print(f"  Valid states visited:   {stats['visited_count']}")
-        print(f"  Invalid states ignored: {stats['invalid_count']}")
+        print(f"  Unique Invalid states:  {stats['invalid_count']}")
         print("-" * 30)
             
     except Exception as e:
