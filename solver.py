@@ -1,5 +1,6 @@
 import sys
 import os
+from collections import deque
 from board import Board, PiecePlace, Location, FullBoardState
 from board_parser import parse_board_string
 
@@ -27,24 +28,23 @@ def get_neighbors(current_board: Board):
                     new_place = PiecePlace(piece_to_move.id, Location(y, x), orientation)
                     
                     # Create a new board with the moved piece
-                    # The constructor handles validity checking and state computation
                     new_board = Board(current_board.setup, other_pieces + [new_place])
                     
                     if new_board.board_state != FullBoardState.INVALID:
                         neighbors.append(new_board)
     return neighbors
 
-def solve_dfs(start_board: Board):
+def solve_bfs(start_board: Board):
     """
-    Performs an iterative Depth-First Search to find a solution.
+    Performs a Breadth-First Search to find the shortest path to a solution.
     Returns the sequence of boards from start to solution, or None if not found.
     """
-    # stack stores (current_board, path_to_current_board)
-    stack = [(start_board, [start_board])]
+    # queue stores (current_board, path_to_current_board)
+    queue = deque([(start_board, [start_board])])
     visited = {start_board.get_board_identifier()}
     
-    while stack:
-        current_board, path = stack.pop()
+    while queue:
+        current_board, path = queue.popleft()
         
         if current_board.board_state == FullBoardState.SOLVED:
             return path
@@ -53,7 +53,7 @@ def solve_dfs(start_board: Board):
             ident = neighbor.get_board_identifier()
             if ident not in visited:
                 visited.add(ident)
-                stack.append((neighbor, path + [neighbor]))
+                queue.append((neighbor, path + [neighbor]))
                 
     return None
 
@@ -77,11 +77,11 @@ def main():
         print(f"Starting puzzle from question {question_num}...")
         print(start_board.debug_string())
         
-        print("Searching for a solution (this may take a moment)...")
-        solution_path = solve_dfs(start_board)
+        print("Searching for the shortest solution using BFS...")
+        solution_path = solve_bfs(start_board)
         
         if solution_path:
-            print(f"\nSUCCESS! Found a solution in {len(solution_path) - 1} moves.")
+            print(f"\nSUCCESS! Found the shortest solution in {len(solution_path) - 1} moves.")
             for i, board in enumerate(solution_path):
                 print(f"Step {i}:")
                 print(board.debug_string())
