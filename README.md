@@ -41,7 +41,7 @@ Challenges are stored as ASCII text files in the `questions/` directory.
 ### Solve a Challenge
 To find the shortest path to the solution using the optimized BFS solver:
 ```bash
-python3 solver.py 60
+python3 solver.py 1
 ```
 
 ### Sample Solver Output (Level 1)
