@@ -81,9 +81,6 @@ def get_piece(id: int, orientation: int) -> Piece:
 
 # cat only cares about location
 class Cat:
-    def __init__(self, y, x):
-        self.loc = Location(y, x)
-
     def __init__(self, loc: Location):
         self.loc = loc
 
@@ -113,6 +110,12 @@ class BoardState(Enum):
     EMPTY = 4 # still occupied by a piece
     NULL = 5 # truly nothing.
 
+# Overall state for the whole board.
+class FullBoardState(Enum):
+    VALID = 1
+    INVALID = 2
+    SOLVED = 3
+
 class Board:
     def __init__(self, setup: BoardSetup, pieces: List[PiecePlace]):
         self.setup = setup
@@ -121,7 +124,7 @@ class Board:
         assert len(self.pieces) <= 4
         assert len(set(p.id for p in self.pieces)) == len(self.pieces) 
         self.pieces.sort(key = lambda p: p.id)
-        self.is_valid = self.is_valid_board_state()
+        self.board_state = self.compute_board_state()
 
     # Get unique identifer for the board state for DFS purpose to avoid stepping into the same state again.
     def get_board_identifier(self):
@@ -138,13 +141,16 @@ class Board:
         assert(len(self.pieces)) <= 3
         for p in self.pieces:
             assert p.id != piece.id
-        return Board(self.setup, )
+        # It would do sorting internally.
+        return Board(self.setup, [*self.pieces, piece])
 
     # check whether the board state is legal.
-    def is_valid_board_state(self) -> bool:
+    def compute_board_state(self) -> FullBoardState:
         all_states = []
         for j in range(5):
             all_states.append([BoardState.NULL for i in range(5)])
+        num_cats = len(self.setup.cats)
+        cat_in_box = 0
         # first place all cats.
         for cat in self.setup.cats:
             all_states[cat.loc.y][cat.loc.x] = BoardState.CAT
@@ -157,30 +163,33 @@ class Board:
                 x = offset.x + cell.location.x
                 if not (0<=y<5 and 0<=x<5):
                     # piece out of boundary.
-                    return False
+                    return FullBoardState.INVALID
                 t = cell.t
                 current_state = all_states[y][x]
                 # if it is box, can either be CAT or NULL.
                 # if it is empty, must be NULL
                 if t == CellType.BOX:
                     if current_state == BoardState.CAT:
+                        cat_in_box += 1
                         all_states[y][x] = BoardState.CAT_IN_BOX
                     elif current_state == BoardState.NULL:
                         all_states[y][x] = BoardState.BOX               
                     else:
-                        return False
+                        return FullBoardState.INVALID
                 else:
                     assert t == CellType.EMPTY
                     if current_state == BoardState.NULL:
                         all_states[y][x] = BoardState.EMPTY
                     else:
-                        return False
+                        return FullBoardState.INVALID
         # everything is placed, so it is a success.
-        return True
+        if cat_in_box == num_cats:
+            return FullBoardState.SOLVED
+        else:
+            return FullBoardState.VALID
 
     # string for visualizing the board.
     def debug_string(self) -> str:
-        valid = self.is_valid
         # 9x9 buffer to update info on.
         buffer = []
         for j in range(9):
@@ -228,8 +237,10 @@ class Board:
                     elif p1[0] + 1 == p2[0] and p1[1] == p2[1]:
                         buffer[p1[0] * 2 + 1][p1[1] * 2] = '|'
         # assemble everything.
-        if not self.is_valid:
+        if self.board_state == FullBoardState.INVALID:
             output = "+<Invalid>+\n"
+        elif self.board_state == FullBoardState.SOLVED:
+            output = "+<Solved>-+\n"
         else:
             output = "+---------+\n"
         for j in range(9):
