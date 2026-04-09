@@ -4,10 +4,11 @@ import heapq
 from board import Board, PiecePlace, Location, FullBoardState
 from board_parser import parse_board_string
 
-def get_neighbors(current_board: Board):
+def get_neighbors(current_board: Board, stats: dict):
     """
     Generates all possible boards reachable by moving exactly one piece 
     to a new valid position/orientation.
+    Updates the stats dictionary with invalid state counts.
     """
     neighbors = []
     # Try moving each of the pieces currently on the board
@@ -30,7 +31,9 @@ def get_neighbors(current_board: Board):
                     # Create a new board with the moved piece
                     new_board = Board(current_board.setup, other_pieces + [new_place])
                     
-                    if new_board.board_state != FullBoardState.INVALID:
+                    if new_board.board_state == FullBoardState.INVALID:
+                        stats['invalid_count'] += 1
+                    else:
                         neighbors.append(new_board)
     return neighbors
 
@@ -38,23 +41,29 @@ def solve_prioritized_bfs(start_board: Board):
     """
     Performs a Prioritized Breadth-First Search to find the shortest path.
     Prioritizes states where more cats are captured first.
+    Returns (solution_path, stats)
     """
+    stats = {
+        'visited_count': 0,
+        'invalid_count': 0
+    }
+    
     # Priority Queue stores (path_length, -cats_captured, tie_breaker, current_board, path)
-    # tie_breaker is used to avoid comparing Board objects if priorities are equal
     counter = 0
     pq = [(0, -start_board.cats_captured, counter, start_board, [start_board])]
-    visited = {start_board.get_board_identifier(): 0} # map ident to shortest path found
+    visited = {start_board.get_board_identifier(): 0} 
     
     while pq:
         path_len, neg_cats, _, current_board, path = heapq.heappop(pq)
+        stats['visited_count'] += 1
         
         if current_board.board_state == FullBoardState.SOLVED:
-            return path
+            return path, stats
             
         if path_len > visited.get(current_board.get_board_identifier(), float('inf')):
             continue
 
-        for neighbor in get_neighbors(current_board):
+        for neighbor in get_neighbors(current_board, stats):
             ident = neighbor.get_board_identifier()
             new_path_len = path_len + 1
             
@@ -63,7 +72,7 @@ def solve_prioritized_bfs(start_board: Board):
                 counter += 1
                 heapq.heappush(pq, (new_path_len, -neighbor.cats_captured, counter, neighbor, path + [neighbor]))
                 
-    return None
+    return None, stats
 
 def main():
     if len(sys.argv) < 2:
@@ -86,7 +95,7 @@ def main():
         print(start_board.debug_string())
         
         print("Searching for the shortest solution with cat-capture priority...")
-        solution_path = solve_prioritized_bfs(start_board)
+        solution_path, stats = solve_prioritized_bfs(start_board)
         
         if solution_path:
             print(f"\nSUCCESS! Found the shortest solution in {len(solution_path) - 1} moves.")
@@ -95,6 +104,12 @@ def main():
                 print(board.debug_string())
         else:
             print("\nNo solution found.")
+            
+        print("-" * 30)
+        print("Search Statistics:")
+        print(f"  Valid states visited:   {stats['visited_count']}")
+        print(f"  Invalid states ignored: {stats['invalid_count']}")
+        print("-" * 30)
             
     except Exception as e:
         import traceback
