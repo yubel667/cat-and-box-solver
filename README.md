@@ -46,23 +46,85 @@ python3 solver.py 1
 
 ### Sample Solver Output (Level 1)
 ```text
+Starting puzzle from question 1...
++---------+
+|c * *-B c|
+|  |   |  |
+|B-* c *  |
+|  |   |  |
+|  *-B *  |
+|         |
+|c * *-B-*|
+|  |     ||
+|*-B-* c *|
++---------+
+
+Searching for the shortest solution with optimized search...
+
 SUCCESS! Found the shortest solution in 4 moves.
 Step 0 (Cats captured: 0):
 +---------+
 |c * *-B c|
-... (initial board) ...
+|  |   |  |
+|B-* c *  |
+|  |   |  |
+|  *-B *  |
+|         |
+|c * *-B-*|
+|  |     ||
+|*-B-* c *|
++---------+
+
+Step 1 (Cats captured: 2):
++---------+
+|C-* *-B c|
+|  |   |  |
+|  *-C *  |
+|  |   |  |
+|  *   *  |
+|         |
+|c * *-B-*|
+|  |     ||
+|*-B-* c *|
++---------+
+
+Step 2 (Cats captured: 3):
++---------+
+|C-*   *-C|
+|  |     ||
+|  *-C   *|
+|  |     ||
+|  *     *|
+|         |
+|c * *-B-*|
+|  |     ||
+|*-B-* c *|
++---------+
+
+Step 3 (Cats captured: 4):
++---------+
+|C-*   *-C|
+|  |     ||
+|  *-C   *|
+|  |     ||
+|* *     *|
+||        |
+|C-* *-B-*|
+||       ||
+|*     c *|
++---------+
 
 Step 4 (Cats captured: 5):
 +<Solved>-+
 |C-*   *-C|
 |  |     ||
-|  *-C   C|
+|  *-C   *|
 |  |     ||
-|* *   *-*|
+|* *     *|
 ||        |
-|C-*     *|
-||       ||
-|*   *-*-C|
+|C-* *    |
+||   |    |
+|*   *-C-*|
 +---------+
 
 ------------------------------
