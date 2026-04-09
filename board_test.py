@@ -22,14 +22,13 @@ class BoardTest(unittest.TestCase):
             PiecePlace(3, Location(3,3), 0)
         ])
         debug_string = board.debug_string()
-        print("debug board state:", debug_string)
-        print(debug_string)
+        print("debug board state:\n"+debug_string)
 
         with open("questions/1.txt", "r") as f:
             expected = f.read()
 
         actual_lines = debug_string.strip().split("\n")
-        expected_lines = expected.split("\n")
+        expected_lines = expected.strip().split("\n")
         self.assertEqual(len(actual_lines), len(expected_lines))
         for actual_line, expected_line in zip(actual_lines, expected_lines):
             self.assertEqual(actual_line, expected_line)
