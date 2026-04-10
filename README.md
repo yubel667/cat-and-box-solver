@@ -1,143 +1,52 @@
 # Cats and Boxes Solver
 
-This is an automated solver for the **"Cats and Boxes"** sequential movement puzzle by **SmartGames**.
+An automated solver and graphical interface for the **"Cats and Boxes"** puzzle by **SmartGames**.
 
-## The Game
-The goal of the puzzle is to move the four movable puzzle pieces until every cat on the board is tucked inside a box.
+![Level 01 Solution](solution/01.webp)
 
-### Core Rules:
-1. **Static Cats**: The cats are placed according to the challenge and cannot be moved during gameplay.
-2. **Sequential Moves**: You move the puzzle pieces one by one. Each move consists of picking up a piece, optionally rotating it, and placing it in a new valid position.
-3. **Valid Placement**: Pieces cannot overlap each other or the cats. Only the "Box" part of a piece can sit on top of a cat; the "Flat" parts cannot.
-4. **Goal**: All cats must be covered by boxes in the fewest moves possible.
+## Project Overview
 
-## Input Format
-Challenges are stored as ASCII text files in the `questions/` directory.
+This project provides a complete suite of tools to model, solve, and visualize the Cats and Boxes sequential movement puzzle. It includes an optimized solver, a graphical user interface for playback, an interactive level editor, and batch export capabilities.
 
-### Example (`questions/1.txt`):
-- `c`: Represents an uncovered cat.
-- `B`: Represents a "Box" part of a piece.
-- `*`: Represents a "Flat" part of a piece.
-- `-` and `|`: Represent connections between cells of the same piece.
-- `C`: Represents a cat covered by a box.
+## Executables & Commands
 
-```text
-+---------+
-|c * *-B c|
-|  |   |  |
-|B-* c *  |
-|  |   |  |
-|  *-B *  |
-|         |
-|c * *-B-*|
-|  |     ||
-|*-B-* c *|
-+---------+
-```
+### 1. Solver (`solver.py`)
+Finds the shortest sequence of moves to solve a given level.
+- **Run with GUI playback:** `python3 solver.py 01`
+- **Run with Autoplay:** `python3 solver.py 01 --autoplay`
+- **Run in CLI mode (text only):** `python3 solver.py 01 --cli`
 
-## Usage
+### 2. Level Editor (`editor.py`)
+Create or modify puzzle levels using a mouse-driven interface.
+- **Usage:** `python3 editor.py 32`
+- **Controls:** 
+  - **Left Click:** Select from palette / Place on grid.
+  - **Right Click / 'R':** Rotate selected piece.
+  - **'S':** Save to `questions/XX.txt`.
+  - **ESC:** Deselect.
 
+### 3. Edit and Solve Script (`edit_and_solve.sh`)
+Streamlined workflow to edit a level and immediately see its solution.
+- **Usage:** `./edit_and_solve.sh 32`
 
-### Solve a Challenge
-To find the shortest path to the solution using the optimized BFS solver:
-```bash
-python3 solver.py 1
-```
+### 4. WebP Exporter (`webp_export.py`)
+Renders a solution path into an optimized animated WebP file.
+- **Usage:** `python3 webp_export.py 01`
+- **Output:** Saved to `solution/01.webp`.
 
-### Sample Solver Output (Level 1)
-```text
-Starting puzzle from question 1...
-+---------+
-|c * *-B c|
-|  |   |  |
-|B-* c *  |
-|  |   |  |
-|  *-B *  |
-|         |
-|c * *-B-*|
-|  |     ||
-|*-B-* c *|
-+---------+
+### 5. Batch Exporter (`batch_export.py`)
+Automatically exports all missing solutions in parallel.
+- **Usage:** `python3 batch_export.py -p 10`
+- **Flag:** `-p` sets the level of parallelism (default: 10).
 
-Searching for the shortest solution with optimized search...
+## Core Components
 
-SUCCESS! Found the shortest solution in 4 moves.
-Step 0 (Cats captured: 0):
-+---------+
-|c * *-B c|
-|  |   |  |
-|B-* c *  |
-|  |   |  |
-|  *-B *  |
-|         |
-|c * *-B-*|
-|  |     ||
-|*-B-* c *|
-+---------+
+- **`board.py`**: The underlying engine that handles piece geometry, rotation, grid state, and move validation using NumPy.
+- **`ui.py`**: A shared rendering module using Pygame for smooth animations and consistent visuals across all tools.
+- **`board_parser.py`**: Translates ASCII puzzle representations into functional board objects.
 
-Step 1 (Cats captured: 2):
-+---------+
-|C-* *-B c|
-|  |   |  |
-|  *-C *  |
-|  |   |  |
-|  *   *  |
-|         |
-|c * *-B-*|
-|  |     ||
-|*-B-* c *|
-+---------+
-
-Step 2 (Cats captured: 3):
-+---------+
-|C-*   *-C|
-|  |     ||
-|  *-C   *|
-|  |     ||
-|  *     *|
-|         |
-|c * *-B-*|
-|  |     ||
-|*-B-* c *|
-+---------+
-
-Step 3 (Cats captured: 4):
-+---------+
-|C-*   *-C|
-|  |     ||
-|  *-C   *|
-|  |     ||
-|* *     *|
-||        |
-|C-* *-B-*|
-||       ||
-|*     c *|
-+---------+
-
-Step 4 (Cats captured: 5):
-+<Solved>-+
-|C-*   *-C|
-|  |     ||
-|  *-C   *|
-|  |     ||
-|* *     *|
-||        |
-|C-* *    |
-||   |    |
-|*   *-C-*|
-+---------+
-
-------------------------------
-Search Statistics:
-  Valid states visited:   45
-  Unique Invalid states:  4404
-------------------------------
-```
-
-## Implementation Details
-- **Shortest Path**: Uses Breadth-First Search (BFS) to guarantee the minimum number of moves.
-- **Priority Search**: Prioritizes states that capture more cats at each step.
-- **Optimized Performance**: 
-    - Uses **NumPy** for fast grid-state computations.
-    - **Precomputed Placements**: Only evaluates positions where pieces actually fit.
-    - **State Caching**: Maintains a cache of both visited valid states and unique invalid states.
+## Technical Highlights
+- **Optimized BFS**: Finds the shortest path using a prioritized search space.
+- **Fast Grid Computation**: Leverages NumPy for efficient overlap and capture checks.
+- **Minimal Mode**: Specialized rendering for high-efficiency recording.
+- **Smooth Animations**: High-framerate interpolation for both translation and rotation of pieces.
