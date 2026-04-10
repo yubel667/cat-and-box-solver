@@ -1,14 +1,14 @@
 # Cats and Boxes Solver
 
-An automated solver and graphical interface for the **"Cats and Boxes"** puzzle by **SmartGames**. (I highly recommend buying one physical copy!)
+An automated solver and graphical interface for the **"Cats and Boxes"** puzzle by **SmartGames**. (I highly recommend buying a physical copy!)
 
 ## About the project
 
-Mostly a vibe coding project. It is a really fun game so I have the urge to write a solver for it. I write the board.py and add some basic test, then vibe coded to finish solver, ui and export functionality.
+Mostly a vibe coding project. It is a really fun game so I have the urge to write a solver for it. I write the board.py and add some basic test, then vibe coded to finish solver, ui and export functionality, done by gemini 3.0 flash.
 
 Currently this is considered done as all main and extra puzzles are solved.
 
-You can find all questions (in ascii format) in questions/ folder and solution (webp animation) in solution folder.
+You can find all questions (in ascii format) in questions/ folder and solution (webp animation) in solution/ folder.
 
 There are 60 main levels (5 difficulties, 12 level each) and 40 bonus levels (4 difficulties, 10 level each).
 
