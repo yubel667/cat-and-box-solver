@@ -4,7 +4,7 @@ from board_parser import parse_board_string
 
 class TestBoardParser(unittest.TestCase):
     def test_parse_question_1(self):
-        with open("questions/1.txt", "r") as f:
+        with open("questions/01.txt", "r") as f:
             board_str = f.read()
             
         board = parse_board_string(board_str)

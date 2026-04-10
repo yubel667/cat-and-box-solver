@@ -27,7 +27,7 @@ class BoardTest(unittest.TestCase):
         debug_string = board.debug_string()
         print("debug board state:\n"+debug_string)
 
-        with open("questions/1.txt", "r") as f:
+        with open("questions/01.txt", "r") as f:
             expected = f.read()
 
         actual_lines = debug_string.strip().split("\n")
