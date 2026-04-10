@@ -139,12 +139,20 @@ def get_button_rects():
 def get_slider_rect():
     return pygame.Rect(WIDTH // 2 - 100, BOARD_HEIGHT + 100, 200, 10)
 
-def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay_sec):
+def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay_sec, level_name=""):
     ui_rect = pygame.Rect(0, BOARD_HEIGHT, WIDTH, CONTROL_HEIGHT)
     pygame.draw.rect(screen, UI_BG_COLOR, ui_rect)
     pygame.draw.line(screen, (100, 100, 100), (0, BOARD_HEIGHT), (WIDTH, BOARD_HEIGHT), 2)
 
     font = pygame.font.SysFont(None, 24)
+    
+    # Level Name (Top-Left)
+    if level_name:
+        lname_font = pygame.font.SysFont(None, 32)
+        lname_text = lname_font.render(f"Level {level_name}", True, (200, 200, 200))
+        # Clear a small area behind the text if needed, but here we just blit on top
+        screen.blit(lname_text, (20, 15))
+
     btn_rects = get_button_rects()
     labels = ["|<", "<", "Pause" if is_auto_playing else "Auto", ">", ">|"]
 
@@ -181,7 +189,7 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay
 
     return btn_rects, slider_rect
 
-def play_animation(solution_path, auto_play=False):
+def play_animation(solution_path, auto_play=False, level_name=""):
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Cats and Boxes Solver")
@@ -302,7 +310,7 @@ def play_animation(solution_path, auto_play=False):
                     is_animating = True
                     frame = 0
 
-        draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos, delay_sec)
+        draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos, delay_sec, level_name=level_name)
         pygame.display.flip()
         clock.tick(FPS)
     pygame.quit()

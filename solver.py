@@ -130,7 +130,7 @@ def main():
             if use_gui:
                 try:
                     from ui import play_animation
-                    play_animation(solution_path, auto_play=auto_play)
+                    play_animation(solution_path, auto_play=auto_play, level_name=question_num)
                 except ImportError:
                     print("Pygame is required for the GUI. Run `pip install pygame`.")
         else:
