@@ -239,21 +239,30 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 28)
 
+    save_feedback_timer = 0
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and save_feedback_timer == 0:
                 editor.handle_click(mouse_pos, event.button)
-            elif event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN and save_feedback_timer == 0:
                 if event.key == pygame.K_r:
                     editor.rotate_selection()
                 elif event.key == pygame.K_s:
-                    editor.save()
+                    if editor.save():
+                        save_feedback_timer = 90
                 elif event.key == pygame.K_ESCAPE:
                     editor.selected_type = None
+
+        # Check if save button was clicked via direct mouse check for faster feedback
+        if save_feedback_timer == 0:
+            save_btn_rect = pygame.Rect(WIDTH - 200, HEIGHT - 80, 150, 50)
+            if pygame.mouse.get_pressed()[0] and save_btn_rect.collidepoint(mouse_pos):
+                if editor.save():
+                    save_feedback_timer = 90
 
         screen.fill(UI_BG_COLOR)
         
@@ -300,13 +309,14 @@ def main():
             draw_piece(screen, i, 0, (p_rect.centerx - MARGIN - CELL_SIZE//2) / CELL_SIZE, (p_rect.centery - MARGIN - CELL_SIZE//2) / CELL_SIZE, alpha=150 if is_on_board else 255, scale=0.3)
 
         # 5. Ghost Preview
-        gx = (mouse_pos[0] - MARGIN) // CELL_SIZE
-        gy = (mouse_pos[1] - MARGIN) // CELL_SIZE
-        if 0 <= gx < 5 and 0 <= gy < 5:
-            if editor.selected_type == 'cat':
-                pygame.draw.circle(screen, (*CAT_COLOR, 100), (MARGIN + gx * CELL_SIZE + CELL_SIZE // 2, MARGIN + gy * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE * 0.3)
-            elif editor.selected_type == 'piece':
-                draw_piece(screen, editor.selected_id, editor.selected_orientation, gx, gy, alpha=100)
+        if save_feedback_timer == 0:
+            gx = (mouse_pos[0] - MARGIN) // CELL_SIZE
+            gy = (mouse_pos[1] - MARGIN) // CELL_SIZE
+            if 0 <= gx < 5 and 0 <= gy < 5:
+                if editor.selected_type == 'cat':
+                    pygame.draw.circle(screen, (*CAT_COLOR, 100), (MARGIN + gx * CELL_SIZE + CELL_SIZE // 2, MARGIN + gy * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE * 0.3)
+                elif editor.selected_type == 'piece':
+                    draw_piece(screen, editor.selected_id, editor.selected_orientation, gx, gy, alpha=100)
 
         # 6. UI Panel
         valid, msg = editor.validate()
@@ -333,6 +343,21 @@ def main():
         pygame.draw.rect(screen, btn_col, save_btn_rect, border_radius=8)
         stxt = font.render("SAVE", True, TEXT_COLOR if valid else (120, 120, 120))
         screen.blit(stxt, stxt.get_rect(center=save_btn_rect.center))
+
+        if save_feedback_timer > 0:
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 200))
+            screen.blit(overlay, (0,0))
+            
+            msg_surf = font.render(f"SAVED TO {editor.file_path}", True, VALID_COLOR)
+            exit_msg = font.render("Exiting...", True, TEXT_COLOR)
+            
+            screen.blit(msg_surf, msg_surf.get_rect(center=(WIDTH//2, HEIGHT//2 - 20)))
+            screen.blit(exit_msg, exit_msg.get_rect(center=(WIDTH//2, HEIGHT//2 + 20)))
+            
+            save_feedback_timer -= 1
+            if save_feedback_timer == 0:
+                running = False
 
         pygame.display.flip()
         clock.tick(FPS)
