@@ -36,8 +36,8 @@ def export_webp(question_num):
     # Headless-ish pygame initialization
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
     pygame.init()
-    # We use the same dimensions as ui.py
-    screen = pygame.Surface((ui.WIDTH, ui.HEIGHT))
+    # Minimal mode: only record the board area
+    screen = pygame.Surface((ui.WIDTH, ui.BOARD_HEIGHT))
     
     frames = []
     
@@ -47,7 +47,7 @@ def export_webp(question_num):
     initial_delay_frames = EXPORT_FPS * 1
     for _ in range(initial_delay_frames):
         ui.draw_board(screen, solution_path[0])
-        ui.draw_ui(screen, 0, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name)
+        ui.draw_ui(screen, 0, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name, minimal=True)
         frames.append(surface_to_pil(screen))
 
     for step in range(len(solution_path)):
@@ -55,7 +55,7 @@ def export_webp(question_num):
         if step > 0:
             for _ in range(pause_frames):
                 ui.draw_board(screen, solution_path[step])
-                ui.draw_ui(screen, step, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name)
+                ui.draw_ui(screen, step, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name, minimal=True)
                 frames.append(surface_to_pil(screen))
 
         # 2. Animation frames
@@ -83,35 +83,29 @@ def export_webp(question_num):
                     curr_angle = angle_start + diff * ease
                     
                     ui.draw_board(screen, board_end, {'id': moving_p_end.id, 'x': curr_x, 'y': curr_y, 'angle': curr_angle})
-                    ui.draw_ui(screen, step, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name)
+                    ui.draw_ui(screen, step, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name, minimal=True)
                     frames.append(surface_to_pil(screen))
             else:
                 # Instant transition if no piece moved
                 ui.draw_board(screen, board_end)
-                ui.draw_ui(screen, step + 1, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name)
+                ui.draw_ui(screen, step + 1, len(solution_path), True, (-1,-1), delay_sec, level_name=level_name, minimal=True)
                 frames.append(surface_to_pil(screen))
         else:
             # Final state
             ui.draw_board(screen, solution_path[-1])
             
-            # Draw "SOLVED!" notification as in ui.py
+            # Draw "SOLVED!" notification as in ui.py (will appear in top margin)
             solved_font = pygame.font.SysFont(None, 48)
             text = solved_font.render("SOLVED!", True, (100, 255, 100))
-            exit_font = pygame.font.SysFont(None, 24)
-            exit_text = exit_font.render("(Enter/Space to exit)", True, (200, 200, 200))
-            total_w = text.get_width() + exit_text.get_width() + 15
-            start_x = (ui.WIDTH - total_w) // 2
-            screen.blit(text, (start_x, ui.MARGIN // 2 - text.get_height() // 2))
-            screen.blit(exit_text, (start_x + text.get_width() + 15, ui.MARGIN // 2 - exit_text.get_height() // 2))
-            
-            ui.draw_ui(screen, step, len(solution_path), False, (-1,-1), delay_sec, level_name=level_name)
+            screen.blit(text, (int((ui.WIDTH - text.get_width()) *0.7), ui.MARGIN // 2 - text.get_height() // 2))
+            ui.draw_ui(screen, step, len(solution_path), False, (-1,-1), delay_sec, level_name=level_name, minimal=True)
             
             # Add some final frames to show the result (1 second)
             final_delay_frames = EXPORT_FPS * 1
             for _ in range(final_delay_frames):
                 frames.append(surface_to_pil(screen))
 
-    print(f"Exporting {len(frames)} frames to WebP at {EXPORT_FPS} FPS...")
+    print(f"Exporting {len(frames)} frames to WebP at {EXPORT_FPS} FPS (Minimal Mode)...")
     os.makedirs("solution", exist_ok=True)
     out_path = f"solution/{question_num}.webp"
     
