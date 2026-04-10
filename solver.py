@@ -82,10 +82,15 @@ def solve_prioritized_bfs(start_board: Board):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 solver.py <question_number>")
+        print("Usage: python3 solver.py <question_number> [--gui]")
         sys.exit(1)
         
     question_num = sys.argv[1]
+    
+    use_gui = False
+    if len(sys.argv) > 2 and sys.argv[2] == "--gui":
+        use_gui = True
+        
     file_path = f"questions/{question_num}.txt"
     
     if not os.path.exists(file_path):
@@ -108,6 +113,13 @@ def main():
             for i, board in enumerate(solution_path):
                 print(f"Step {i} (Cats captured: {board.cats_captured}):")
                 print(board.debug_string())
+                
+            if use_gui:
+                try:
+                    from ui import play_animation
+                    play_animation(solution_path)
+                except ImportError:
+                    print("Pygame is required for the GUI. Run `pip install pygame`.")
         else:
             print("\nNo solution found.")
             
