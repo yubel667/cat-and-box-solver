@@ -80,6 +80,13 @@ def solve_prioritized_bfs(start_board: Board):
                 
     return None, stats
 
+def print_stats(stats):
+    print("-" * 30)
+    print("Search Statistics:")
+    print(f"  Valid states visited:   {stats['visited_count']}")
+    print(f"  Unique Invalid states:  {stats['invalid_count']}")
+    print("-" * 30)
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python3 solver.py <question_number> [--gui]")
@@ -87,9 +94,9 @@ def main():
         
     question_num = sys.argv[1]
     
-    use_gui = False
-    if len(sys.argv) > 2 and sys.argv[2] == "--gui":
-        use_gui = True
+    use_gui = True
+    if len(sys.argv) > 2 and sys.argv[2] == "--cli":
+        use_gui = False
         
     file_path = f"questions/{question_num}.txt"
     
@@ -110,10 +117,12 @@ def main():
         
         if solution_path:
             print(f"\nSUCCESS! Found the shortest solution in {len(solution_path) - 1} moves.")
-            for i, board in enumerate(solution_path):
-                print(f"Step {i} (Cats captured: {board.cats_captured}):")
-                print(board.debug_string())
-                
+            if not use_gui:
+                for i, board in enumerate(solution_path):
+                    print(f"Step {i} (Cats captured: {board.cats_captured}):")
+                    print(board.debug_string())
+            print_stats(stats)
+
             if use_gui:
                 try:
                     from ui import play_animation
@@ -121,13 +130,8 @@ def main():
                 except ImportError:
                     print("Pygame is required for the GUI. Run `pip install pygame`.")
         else:
+            print_stats(stats)
             print("\nNo solution found.")
-            
-        print("-" * 30)
-        print("Search Statistics:")
-        print(f"  Valid states visited:   {stats['visited_count']}")
-        print(f"  Unique Invalid states:  {stats['invalid_count']}")
-        print("-" * 30)
             
     except Exception as e:
         import traceback

@@ -18,7 +18,7 @@ ANIM_FRAMES = int(FPS * ANIM_DURATION)
 # Colors
 BOARD_COLOR = (30, 30, 150)
 GRID_LINE_COLOR = (60, 60, 200)
-CAT_COLOR = (255, 165, 0) # Orange
+CAT_COLOR = (160, 32, 240) # Purple
 BOX_COLOR = (210, 180, 140) # Light Brown
 EMPTY_CELL_COLOR = (0, 255, 255) # Cyan
 CONNECTION_COLOR = EMPTY_CELL_COLOR
@@ -189,7 +189,7 @@ def play_animation(solution_path):
     is_animating = False
     is_auto_playing = False
     auto_pause_timer = 0 # Timer for delay between moves in auto-play
-    delay_sec = 0.5
+    delay_sec = 0.3 # Default for best result.
     dragging_slider = False
     
     running = True
@@ -237,13 +237,16 @@ def play_animation(solution_path):
                     if not is_animating and current_step < len(solution_path)-1:
                         is_animating, is_auto_playing, frame, auto_pause_timer = True, False, 0, 0
                 elif event.key == pygame.K_RETURN:
-                    is_auto_playing = not is_auto_playing
-                    if is_auto_playing:
-                        if not is_animating and current_step < len(solution_path)-1:
-                            is_animating = True
-                            frame = 0
+                    if current_step == len(solution_path) - 1:
+                        running = False
                     else:
-                        auto_pause_timer = 0
+                        is_auto_playing = not is_auto_playing
+                        if is_auto_playing:
+                            if not is_animating and current_step < len(solution_path)-1:
+                                is_animating = True
+                                frame = 0
+                        else:
+                            auto_pause_timer = 0
 
         if is_animating:
             board_start = solution_path[current_step]
@@ -278,10 +281,17 @@ def play_animation(solution_path):
             if current_step == len(solution_path) - 1:
                 font = pygame.font.SysFont(None, 64)
                 text = font.render("SOLVED!", True, (0, 150, 0))
-                text_rect = text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2))
-                pygame.draw.rect(screen, (255, 255, 255), text_rect.inflate(20, 20))
-                pygame.draw.rect(screen, (0, 0, 0), text_rect.inflate(20, 20), 2)
+                text_rect = text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2 - 10))
+                
+                exit_font = pygame.font.SysFont(None, 24)
+                exit_text = exit_font.render("(Enter to exit)", True, (100, 100, 100))
+                exit_rect = exit_text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2 + 30))
+                
+                bg_rect = text_rect.union(exit_rect).inflate(30, 30)
+                pygame.draw.rect(screen, (255, 255, 255), bg_rect)
+                pygame.draw.rect(screen, (0, 0, 0), bg_rect, 2)
                 screen.blit(text, text_rect)
+                screen.blit(exit_text, exit_rect)
             elif is_auto_playing and auto_pause_timer > 0:
                 auto_pause_timer -= 1
                 if auto_pause_timer <= 0:
