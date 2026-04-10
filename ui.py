@@ -282,19 +282,18 @@ def play_animation(solution_path):
         else:
             draw_board(screen, solution_path[current_step])
             if current_step == len(solution_path) - 1:
-                font = pygame.font.SysFont(None, 64)
-                text = font.render("SOLVED!", True, (0, 150, 0))
-                text_rect = text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2 - 10))
+                # Draw solved message in the top margin area (y=0 to y=50)
+                solved_font = pygame.font.SysFont(None, 48)
+                text = solved_font.render("SOLVED!", True, (100, 255, 100))
                 
                 exit_font = pygame.font.SysFont(None, 24)
-                exit_text = exit_font.render("(Enter to exit)", True, (100, 100, 100))
-                exit_rect = exit_text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2 + 30))
+                exit_text = exit_font.render("(Enter to exit)", True, (200, 200, 200))
                 
-                bg_rect = text_rect.union(exit_rect).inflate(30, 30)
-                pygame.draw.rect(screen, (255, 255, 255), bg_rect)
-                pygame.draw.rect(screen, (0, 0, 0), bg_rect, 2)
-                screen.blit(text, text_rect)
-                screen.blit(exit_text, exit_rect)
+                total_w = text.get_width() + exit_text.get_width() + 15
+                start_x = (WIDTH - total_w) // 2
+                
+                screen.blit(text, (start_x, MARGIN // 2 - text.get_height() // 2))
+                screen.blit(exit_text, (start_x + text.get_width() + 15, MARGIN // 2 - exit_text.get_height() // 2))
             elif is_auto_playing and auto_pause_timer > 0:
                 auto_pause_timer -= 1
                 if auto_pause_timer <= 0:
