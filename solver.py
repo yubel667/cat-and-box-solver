@@ -89,14 +89,18 @@ def print_stats(stats):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 solver.py <question_number> [--gui]")
+        print("Usage: python3 solver.py <question_number> [--cli | --autoplay]")
         sys.exit(1)
         
     question_num = sys.argv[1]
     
     use_gui = True
-    if len(sys.argv) > 2 and sys.argv[2] == "--cli":
+    auto_play = False
+    if "--cli" in sys.argv:
         use_gui = False
+    if "--autoplay" in sys.argv:
+        use_gui = True
+        auto_play = True
         
     file_path = f"questions/{question_num}.txt"
     
@@ -126,7 +130,7 @@ def main():
             if use_gui:
                 try:
                     from ui import play_animation
-                    play_animation(solution_path)
+                    play_animation(solution_path, auto_play=auto_play)
                 except ImportError:
                     print("Pygame is required for the GUI. Run `pip install pygame`.")
         else:

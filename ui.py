@@ -181,7 +181,7 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay
 
     return btn_rects, slider_rect
 
-def play_animation(solution_path):
+def play_animation(solution_path, auto_play=False):
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Cats and Boxes Solver")
@@ -189,8 +189,8 @@ def play_animation(solution_path):
 
     current_step = 0
     frame = 0
-    is_animating = False
-    is_auto_playing = False
+    is_animating = auto_play
+    is_auto_playing = auto_play
     auto_pause_timer = 0 # Timer for delay between moves in auto-play
     delay_sec = 0.3 # Default for best result.
     dragging_slider = False
