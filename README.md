@@ -12,12 +12,12 @@ You can find all questions (in ascii format) in questions/ folder and solution (
 
 There are 60 main levels (5 difficulties, 12 level each) and 40 bonus levels (4 difficulties, 10 level each).
 
-Below is a sample solution webp for the first puzzle.
+Below is a sample solution webp for challenge 41, the same one used by the youtube instruction below.
 
-![Level 01 Solution](solution/01.webp)
+![Level 41 Solution](solution/41.webp)
 
 ## Rules & Useful links
-Click the image (youtube link) to get an overview.
+Click the image (youtube link) to view game instructions.
 [![Instructions](https://img.youtube.com/vi/rCmbVHndzhQ/0.jpg)](https://www.youtube.com/watch?v=rCmbVHndzhQ)
 
 Here's the designer's webpage introduction on this game:
