@@ -173,7 +173,7 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay
     # Key hint
     hint_font = pygame.font.SysFont(None, 20)
     if current_step == total_steps - 1:
-        hint = "ENTER: Exit"
+        hint = "ENTER/SPACE: Exit"
     else:
         hint = "SPACE: Next | ENTER: Auto Play"
     hint_text = hint_font.render(hint, True, (150, 150, 150))
@@ -237,7 +237,9 @@ def play_animation(solution_path):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if not is_animating and current_step < len(solution_path)-1:
+                    if current_step == len(solution_path) - 1:
+                        running = False
+                    elif not is_animating and current_step < len(solution_path)-1:
                         is_animating, is_auto_playing, frame, auto_pause_timer = True, False, 0, 0
                 elif event.key == pygame.K_RETURN:
                     if current_step == len(solution_path) - 1:
@@ -287,7 +289,7 @@ def play_animation(solution_path):
                 text = solved_font.render("SOLVED!", True, (100, 255, 100))
                 
                 exit_font = pygame.font.SysFont(None, 24)
-                exit_text = exit_font.render("(Enter to exit)", True, (200, 200, 200))
+                exit_text = exit_font.render("(Enter/Space to exit)", True, (200, 200, 200))
                 
                 total_w = text.get_width() + exit_text.get_width() + 15
                 start_x = (WIDTH - total_w) // 2
