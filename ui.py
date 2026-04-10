@@ -172,7 +172,10 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay
     
     # Key hint
     hint_font = pygame.font.SysFont(None, 20)
-    hint = "SPACE: Next | ENTER: Auto Play"
+    if current_step == total_steps - 1:
+        hint = "ENTER: Exit"
+    else:
+        hint = "SPACE: Next | ENTER: Auto Play"
     hint_text = hint_font.render(hint, True, (150, 150, 150))
     screen.blit(hint_text, (WIDTH - hint_text.get_width() - 20, BOARD_HEIGHT + 15))
 
