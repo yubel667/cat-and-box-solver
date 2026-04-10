@@ -39,7 +39,7 @@ def draw_board(screen, board, moving_piece_data=None):
     for cat in board.setup.cats:
         cx = MARGIN + cat.loc.x * CELL_SIZE + CELL_SIZE // 2
         cy = MARGIN + cat.loc.y * CELL_SIZE + CELL_SIZE // 2
-        pygame.draw.circle(screen, CAT_COLOR, (cx, cy), CELL_SIZE // 2.5)
+        pygame.draw.circle(screen, CAT_COLOR, (cx, cy), CELL_SIZE * 0.3)
 
     static_pieces = []
     if moving_piece_data:
@@ -91,7 +91,7 @@ def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
                 py1 = center + gy1 * CELL_SIZE
                 px2 = center + gx2 * CELL_SIZE
                 py2 = center + gy2 * CELL_SIZE
-                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), CELL_SIZE)
+                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), 80)
 
     # Cells
     for cell in piece.cells:
