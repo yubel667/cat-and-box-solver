@@ -8,12 +8,12 @@ CELL_SIZE = 100
 MARGIN = 50
 BOARD_WIDTH = CELL_SIZE * 5 + 2 * MARGIN
 BOARD_HEIGHT = CELL_SIZE * 5 + 2 * MARGIN
-CONTROL_HEIGHT = 100
+CONTROL_HEIGHT = 130
 WIDTH = BOARD_WIDTH
 HEIGHT = BOARD_HEIGHT + CONTROL_HEIGHT
 FPS = 60
-ANIMATION_DURATION_SEC = 0.5
-FRAMES_PER_MOVE = int(FPS * ANIMATION_DURATION_SEC)
+ANIM_DURATION = 0.5 # Fixed animation speed
+ANIM_FRAMES = int(FPS * ANIM_DURATION)
 
 # Colors
 BOARD_COLOR = (30, 30, 150)
@@ -91,7 +91,7 @@ def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
                 py1 = center + gy1 * CELL_SIZE
                 px2 = center + gx2 * CELL_SIZE
                 py2 = center + gy2 * CELL_SIZE
-                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), 80)
+                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), CELL_SIZE)
 
     # Cells
     for cell in piece.cells:
@@ -136,7 +136,10 @@ def get_button_rects():
         rects.append(pygame.Rect(start_x + i * (btn_w + spacing), y, btn_w, btn_h))
     return rects
 
-def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos):
+def get_slider_rect():
+    return pygame.Rect(WIDTH // 2 - 100, BOARD_HEIGHT + 100, 200, 10)
+
+def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos, delay_sec):
     ui_rect = pygame.Rect(0, BOARD_HEIGHT, WIDTH, CONTROL_HEIGHT)
     pygame.draw.rect(screen, UI_BG_COLOR, ui_rect)
     pygame.draw.line(screen, (100, 100, 100), (0, BOARD_HEIGHT), (WIDTH, BOARD_HEIGHT), 2)
@@ -153,6 +156,15 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos):
         text = font.render(label, True, TEXT_COLOR)
         screen.blit(text, text.get_rect(center=rect.center))
 
+    # Slider
+    slider_rect = get_slider_rect()
+    pygame.draw.line(screen, (100, 100, 100), (slider_rect.left, slider_rect.centery), (slider_rect.right, slider_rect.centery), 4)
+    knob_x = slider_rect.left + int((delay_sec / 2.0) * slider_rect.width)
+    pygame.draw.circle(screen, (200, 200, 200), (knob_x, slider_rect.centery), 8)
+    
+    delay_text = font.render(f"Auto Delay: {delay_sec:.1f}s", True, TEXT_COLOR)
+    screen.blit(delay_text, (slider_rect.left - 130, slider_rect.top - 5))
+
     # Step Info
     step_font = pygame.font.SysFont(None, 32)
     step_text = step_font.render(f"Step {current_step} / {total_steps-1}", True, TEXT_COLOR)
@@ -164,7 +176,7 @@ def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos):
     hint_text = hint_font.render(hint, True, (150, 150, 150))
     screen.blit(hint_text, (WIDTH - hint_text.get_width() - 20, BOARD_HEIGHT + 15))
 
-    return btn_rects
+    return btn_rects, slider_rect
 
 def play_animation(solution_path):
     pygame.init()
@@ -176,41 +188,62 @@ def play_animation(solution_path):
     frame = 0
     is_animating = False
     is_auto_playing = False
+    auto_pause_timer = 0 # Timer for delay between moves in auto-play
+    delay_sec = 0.5
+    dragging_slider = False
     
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
-        btn_rects = get_button_rects()
+        btn_rects, slider_rect = draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos, delay_sec)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if btn_rects[0].collidepoint(mouse_pos): # Begin
-                    current_step, frame, is_animating, is_auto_playing = 0, 0, False, False
-                elif btn_rects[1].collidepoint(mouse_pos): # Prev
-                    is_animating, is_auto_playing = False, False
-                    if current_step > 0: current_step -= 1
-                    frame = 0
-                elif btn_rects[2].collidepoint(mouse_pos): # Auto/Pause
-                    is_auto_playing = not is_auto_playing
-                    if is_auto_playing and not is_animating and current_step < len(solution_path)-1:
-                        is_animating = True
-                elif btn_rects[3].collidepoint(mouse_pos): # Next
-                    if not is_animating and current_step < len(solution_path)-1:
-                        is_animating, is_auto_playing, frame = True, False, 0
-                elif btn_rects[4].collidepoint(mouse_pos): # End
-                    current_step, frame, is_animating, is_auto_playing = len(solution_path)-1, 0, False, False
+                if slider_rect.inflate(0, 20).collidepoint(mouse_pos):
+                    dragging_slider = True
+                else:
+                    if btn_rects[0].collidepoint(mouse_pos): # Begin
+                        current_step, frame, is_animating, is_auto_playing, auto_pause_timer = 0, 0, False, False, 0
+                    elif btn_rects[1].collidepoint(mouse_pos): # Prev
+                        is_animating, is_auto_playing, auto_pause_timer = False, False, 0
+                        if current_step > 0: current_step -= 1
+                        frame = 0
+                    elif btn_rects[2].collidepoint(mouse_pos): # Auto/Pause
+                        is_auto_playing = not is_auto_playing
+                        if is_auto_playing:
+                            if not is_animating and current_step < len(solution_path)-1:
+                                is_animating = True
+                                frame = 0
+                        else:
+                            auto_pause_timer = 0
+                    elif btn_rects[3].collidepoint(mouse_pos): # Next
+                        if not is_animating and current_step < len(solution_path)-1:
+                            is_animating, is_auto_playing, frame, auto_pause_timer = True, False, 0, 0
+                    elif btn_rects[4].collidepoint(mouse_pos): # End
+                        current_step, frame, is_animating, is_auto_playing, auto_pause_timer = len(solution_path)-1, 0, False, False, 0
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                dragging_slider = False
+
+            if dragging_slider:
+                rel_x = max(0, min(mouse_pos[0] - slider_rect.left, slider_rect.width))
+                delay_sec = round((rel_x / slider_rect.width) * 2.0, 1)
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if not is_animating and current_step < len(solution_path)-1:
-                        is_animating, is_auto_playing, frame = True, False, 0
+                        is_animating, is_auto_playing, frame, auto_pause_timer = True, False, 0, 0
                 elif event.key == pygame.K_RETURN:
                     is_auto_playing = not is_auto_playing
-                    if is_auto_playing and not is_animating and current_step < len(solution_path)-1:
-                        is_animating = True
+                    if is_auto_playing:
+                        if not is_animating and current_step < len(solution_path)-1:
+                            is_animating = True
+                            frame = 0
+                    else:
+                        auto_pause_timer = 0
 
         if is_animating:
             board_start = solution_path[current_step]
@@ -222,7 +255,7 @@ def play_animation(solution_path):
                     break
             
             if moving_p_start:
-                progress = frame / FRAMES_PER_MOVE
+                progress = frame / ANIM_FRAMES
                 ease = progress * progress * (3.0 - 2.0 * progress)
                 curr_x = moving_p_start.loc.x + (moving_p_end.loc.x - moving_p_start.loc.x) * ease
                 curr_y = moving_p_start.loc.y + (moving_p_end.loc.y - moving_p_start.loc.y) * ease
@@ -231,12 +264,15 @@ def play_animation(solution_path):
                 curr_angle = angle_start + diff * ease
                 draw_board(screen, board_end, {'id': moving_p_end.id, 'x': curr_x, 'y': curr_y, 'angle': curr_angle})
                 frame += 1
-                if frame >= FRAMES_PER_MOVE:
+                if frame >= ANIM_FRAMES:
                     frame, current_step, is_animating = 0, current_step + 1, False
-                    if is_auto_playing and current_step < len(solution_path)-1: is_animating = True
+                    if is_auto_playing and current_step < len(solution_path)-1:
+                        auto_pause_timer = int(delay_sec * FPS)
             else:
                 current_step += 1
-                is_animating = is_auto_playing and current_step < len(solution_path)-1
+                is_animating = False
+                if is_auto_playing and current_step < len(solution_path)-1:
+                    auto_pause_timer = int(delay_sec * FPS)
         else:
             draw_board(screen, solution_path[current_step])
             if current_step == len(solution_path) - 1:
@@ -246,8 +282,13 @@ def play_animation(solution_path):
                 pygame.draw.rect(screen, (255, 255, 255), text_rect.inflate(20, 20))
                 pygame.draw.rect(screen, (0, 0, 0), text_rect.inflate(20, 20), 2)
                 screen.blit(text, text_rect)
+            elif is_auto_playing and auto_pause_timer > 0:
+                auto_pause_timer -= 1
+                if auto_pause_timer <= 0:
+                    is_animating = True
+                    frame = 0
 
-        draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos)
+        draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos, delay_sec)
         pygame.display.flip()
         clock.tick(FPS)
     pygame.quit()
