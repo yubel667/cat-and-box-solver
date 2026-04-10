@@ -6,10 +6,13 @@ from board import Board, PIECE_MAP, CellType, PIECES
 # Constants
 CELL_SIZE = 100
 MARGIN = 50
-WIDTH = CELL_SIZE * 5 + 2 * MARGIN
-HEIGHT = CELL_SIZE * 5 + 2 * MARGIN
+BOARD_WIDTH = CELL_SIZE * 5 + 2 * MARGIN
+BOARD_HEIGHT = CELL_SIZE * 5 + 2 * MARGIN
+CONTROL_HEIGHT = 100
+WIDTH = BOARD_WIDTH
+HEIGHT = BOARD_HEIGHT + CONTROL_HEIGHT
 FPS = 60
-ANIMATION_DURATION_SEC = 0.8  # Slightly slower for better visibility
+ANIMATION_DURATION_SEC = 0.5
 FRAMES_PER_MOVE = int(FPS * ANIMATION_DURATION_SEC)
 
 # Colors
@@ -19,14 +22,18 @@ CAT_COLOR = (255, 165, 0) # Orange
 BOX_COLOR = (210, 180, 140) # Light Brown
 EMPTY_CELL_COLOR = (0, 255, 255) # Cyan
 CONNECTION_COLOR = (200, 200, 200) # Light Gray
+TEXT_COLOR = (255, 255, 255)
+UI_BG_COLOR = (40, 40, 40)
+BTN_COLOR = (60, 60, 60)
+BTN_HOVER_COLOR = (80, 80, 80)
 
 def draw_board(screen, board, moving_piece_data=None):
-    screen.fill(BOARD_COLOR)
+    pygame.draw.rect(screen, BOARD_COLOR, (0, 0, BOARD_WIDTH, BOARD_HEIGHT))
     
     # Draw Grid
     for i in range(6):
-        pygame.draw.line(screen, GRID_LINE_COLOR, (MARGIN, MARGIN + i * CELL_SIZE), (WIDTH - MARGIN, MARGIN + i * CELL_SIZE), 2)
-        pygame.draw.line(screen, GRID_LINE_COLOR, (MARGIN + i * CELL_SIZE, MARGIN), (MARGIN + i * CELL_SIZE, HEIGHT - MARGIN), 2)
+        pygame.draw.line(screen, GRID_LINE_COLOR, (MARGIN, MARGIN + i * CELL_SIZE), (BOARD_WIDTH - MARGIN, MARGIN + i * CELL_SIZE), 2)
+        pygame.draw.line(screen, GRID_LINE_COLOR, (MARGIN + i * CELL_SIZE, MARGIN), (MARGIN + i * CELL_SIZE, BOARD_HEIGHT - MARGIN), 2)
 
     # Draw Cats
     for cat in board.setup.cats:
@@ -34,7 +41,6 @@ def draw_board(screen, board, moving_piece_data=None):
         cy = MARGIN + cat.loc.y * CELL_SIZE + CELL_SIZE // 2
         pygame.draw.circle(screen, CAT_COLOR, (cx, cy), CELL_SIZE // 2.5)
 
-    # Separate static pieces and the moving piece (if any)
     static_pieces = []
     if moving_piece_data:
         moving_id = moving_piece_data['id']
@@ -44,24 +50,21 @@ def draw_board(screen, board, moving_piece_data=None):
     else:
         static_pieces = board.pieces
 
-    # Draw static pieces
     for p in static_pieces:
         draw_piece(screen, p.id, p.orientation, p.loc.x, p.loc.y)
 
-    # Draw moving piece with alpha and rotation
     if moving_piece_data:
         draw_piece(
             screen, 
             moving_piece_data['id'], 
-            0, # We will handle rotation manually
+            0,
             moving_piece_data['x'], 
             moving_piece_data['y'],
-            alpha=160, # Transparency
+            alpha=160,
             angle=moving_piece_data['angle']
         )
         
 def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
-    # If angle is provided, we ignore orientation and use PIECES[p_id] (base orientation)
     if angle is not None:
         piece = next(p for p in PIECES if p.id == p_id)
         rotation_angle = angle
@@ -69,16 +72,14 @@ def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
         piece = PIECE_MAP[p_id, orientation]
         rotation_angle = 0
 
-    # Create a temporary surface for the piece to handle alpha and rotation
     surf_size = CELL_SIZE * 5 
     piece_surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
     center = surf_size // 2
 
-    # Draw connections
+    # Connections
     cells = []
     for cell in piece.cells:
-        gx = cell.location.x
-        gy = cell.location.y
+        gx, gy = cell.location.x, cell.location.y
         cells.append((gx, gy))
         
     for i in range(len(cells)):
@@ -92,48 +93,78 @@ def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
                 py2 = center + gy2 * CELL_SIZE
                 pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), 20)
 
-    # Draw cells
+    # Cells
     for cell in piece.cells:
-        gx = cell.location.x
-        gy = cell.location.y
-        
+        gx, gy = cell.location.x, cell.location.y
         px = center + gx * CELL_SIZE - CELL_SIZE // 2
         py = center + gy * CELL_SIZE - CELL_SIZE // 2
-        
-        # Large size: leave only a small 2px gap
         rect = pygame.Rect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4)
         
         if cell.t == CellType.BOX:
-            # Box cell: Light brown with a central transparent hole
             pygame.draw.rect(piece_surf, BOX_COLOR, rect, border_radius=8)
-            pygame.draw.rect(piece_surf, (0,0,0), rect, 2, border_radius=8) # Outline
-            
-            # Central hole (to see the cat)
+            pygame.draw.rect(piece_surf, (0,0,0), rect, 2, border_radius=8)
             hole_radius = CELL_SIZE // 3
             pygame.draw.circle(piece_surf, (0, 0, 0, 0), (px + CELL_SIZE // 2, py + CELL_SIZE // 2), hole_radius)
         else:
-            # Empty cell: Cyan
             pygame.draw.rect(piece_surf, EMPTY_CELL_COLOR, rect, border_radius=4)
-            pygame.draw.rect(piece_surf, (0,0,0), rect, 2, border_radius=4) # Outline
+            pygame.draw.rect(piece_surf, (0,0,0), rect, 2, border_radius=4)
 
-    # Apply rotation
     if rotation_angle != 0:
         piece_surf = pygame.transform.rotate(piece_surf, rotation_angle)
     
-    # Apply alpha
     if alpha < 255:
-        # Create a copy with alpha
         temp_surf = pygame.Surface(piece_surf.get_size(), pygame.SRCALPHA)
         temp_surf.blit(piece_surf, (0,0))
         temp_surf.set_alpha(alpha)
         piece_surf = temp_surf
 
-    # Blit to screen
     final_rect = piece_surf.get_rect(center=(
         MARGIN + loc_x * CELL_SIZE + CELL_SIZE // 2,
         MARGIN + loc_y * CELL_SIZE + CELL_SIZE // 2
     ))
     screen.blit(piece_surf, final_rect)
+
+def get_button_rects():
+    btn_w, btn_h = 70, 40
+    spacing = 10
+    total_w = 5 * btn_w + 4 * spacing
+    start_x = (WIDTH - total_w) // 2
+    y = BOARD_HEIGHT + 40
+    
+    rects = []
+    for i in range(5):
+        rects.append(pygame.Rect(start_x + i * (btn_w + spacing), y, btn_w, btn_h))
+    return rects
+
+def draw_ui(screen, current_step, total_steps, is_auto_playing, mouse_pos):
+    ui_rect = pygame.Rect(0, BOARD_HEIGHT, WIDTH, CONTROL_HEIGHT)
+    pygame.draw.rect(screen, UI_BG_COLOR, ui_rect)
+    pygame.draw.line(screen, (100, 100, 100), (0, BOARD_HEIGHT), (WIDTH, BOARD_HEIGHT), 2)
+
+    font = pygame.font.SysFont(None, 24)
+    btn_rects = get_button_rects()
+    labels = ["|<", "<", "Pause" if is_auto_playing else "Auto", ">", ">|"]
+
+    for rect, label in zip(btn_rects, labels):
+        color = BTN_HOVER_COLOR if rect.collidepoint(mouse_pos) else BTN_COLOR
+        pygame.draw.rect(screen, color, rect, border_radius=5)
+        pygame.draw.rect(screen, (100, 100, 100), rect, 1, border_radius=5)
+        
+        text = font.render(label, True, TEXT_COLOR)
+        screen.blit(text, text.get_rect(center=rect.center))
+
+    # Step Info
+    step_font = pygame.font.SysFont(None, 32)
+    step_text = step_font.render(f"Step {current_step} / {total_steps-1}", True, TEXT_COLOR)
+    screen.blit(step_text, (20, BOARD_HEIGHT + 10))
+    
+    # Key hint
+    hint_font = pygame.font.SysFont(None, 20)
+    hint = "SPACE: Next | ENTER: Auto Play"
+    hint_text = hint_font.render(hint, True, (150, 150, 150))
+    screen.blit(hint_text, (WIDTH - hint_text.get_width() - 20, BOARD_HEIGHT + 15))
+
+    return btn_rects
 
 def play_animation(solution_path):
     pygame.init()
@@ -141,88 +172,82 @@ def play_animation(solution_path):
     pygame.display.set_caption("Cats and Boxes Solver")
     clock = pygame.time.Clock()
 
-    if not solution_path:
-        print("No solution to animate.")
-        return
-
     current_step = 0
     frame = 0
+    is_animating = False
+    is_auto_playing = False
     
     running = True
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        btn_rects = get_button_rects()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if btn_rects[0].collidepoint(mouse_pos): # Begin
+                    current_step, frame, is_animating, is_auto_playing = 0, 0, False, False
+                elif btn_rects[1].collidepoint(mouse_pos): # Prev
+                    is_animating, is_auto_playing = False, False
+                    if current_step > 0: current_step -= 1
+                    frame = 0
+                elif btn_rects[2].collidepoint(mouse_pos): # Auto/Pause
+                    is_auto_playing = not is_auto_playing
+                    if is_auto_playing and not is_animating and current_step < len(solution_path)-1:
+                        is_animating = True
+                elif btn_rects[3].collidepoint(mouse_pos): # Next
+                    if not is_animating and current_step < len(solution_path)-1:
+                        is_animating, is_auto_playing, frame = True, False, 0
+                elif btn_rects[4].collidepoint(mouse_pos): # End
+                    current_step, frame, is_animating, is_auto_playing = len(solution_path)-1, 0, False, False
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    # Reset animation
-                    current_step = 0
-                    frame = 0
-                
-        if current_step < len(solution_path) - 1:
+                    if not is_animating and current_step < len(solution_path)-1:
+                        is_animating, is_auto_playing, frame = True, False, 0
+                elif event.key == pygame.K_RETURN:
+                    is_auto_playing = not is_auto_playing
+                    if is_auto_playing and not is_animating and current_step < len(solution_path)-1:
+                        is_animating = True
+
+        if is_animating:
             board_start = solution_path[current_step]
             board_end = solution_path[current_step + 1]
-            
-            # Find the moving piece
-            moving_p_start = None
-            moving_p_end = None
-            
+            moving_p_start, moving_p_end = None, None
             for p1, p2 in zip(board_start.pieces, board_end.pieces):
                 if p1.loc.x != p2.loc.x or p1.loc.y != p2.loc.y or p1.orientation != p2.orientation:
-                    moving_p_start = p1
-                    moving_p_end = p2
+                    moving_p_start, moving_p_end = p1, p2
                     break
-                    
-            if not moving_p_start:
+            
+            if moving_p_start:
+                progress = frame / FRAMES_PER_MOVE
+                ease = progress * progress * (3.0 - 2.0 * progress)
+                curr_x = moving_p_start.loc.x + (moving_p_end.loc.x - moving_p_start.loc.x) * ease
+                curr_y = moving_p_start.loc.y + (moving_p_end.loc.y - moving_p_start.loc.y) * ease
+                angle_start, angle_end = moving_p_start.orientation * 90, moving_p_end.orientation * 90
+                diff = (angle_end - angle_start + 180) % 360 - 180
+                curr_angle = angle_start + diff * ease
+                draw_board(screen, board_end, {'id': moving_p_end.id, 'x': curr_x, 'y': curr_y, 'angle': curr_angle})
+                frame += 1
+                if frame >= FRAMES_PER_MOVE:
+                    frame, current_step, is_animating = 0, current_step + 1, False
+                    if is_auto_playing and current_step < len(solution_path)-1: is_animating = True
+            else:
                 current_step += 1
-                frame = 0
-                continue
-                
-            progress = frame / FRAMES_PER_MOVE
-            # Easing
-            t = progress
-            ease = t * t * (3.0 - 2.0 * t) # smoothstep
-            
-            curr_x = moving_p_start.loc.x + (moving_p_end.loc.x - moving_p_start.loc.x) * ease
-            curr_y = moving_p_start.loc.y + (moving_p_end.loc.y - moving_p_start.loc.y) * ease
-            
-            # Handle rotation angle (CCW)
-            angle_start = moving_p_start.orientation * 90
-            angle_end = moving_p_end.orientation * 90
-            
-            # Shortest rotation path
-            diff = (angle_end - angle_start + 180) % 360 - 180
-            curr_angle = angle_start + diff * ease
-            
-            moving_data = {
-                'id': moving_p_end.id,
-                'x': curr_x,
-                'y': curr_y,
-                'angle': curr_angle
-            }
-            
-            draw_board(screen, board_end, moving_data)
-            
-            frame += 1
-            if frame >= FRAMES_PER_MOVE:
-                frame = 0
-                current_step += 1
-                pygame.display.flip()
-                pygame.time.wait(200)
+                is_animating = is_auto_playing and current_step < len(solution_path)-1
         else:
-            # Final state
-            draw_board(screen, solution_path[-1])
-            
-            # Display SOLVED text
-            font = pygame.font.SysFont(None, 64)
-            text = font.render("SOLVED!", True, (0, 150, 0))
-            text_rect = text.get_rect(center=(WIDTH/2, HEIGHT/2))
-            bg_rect = text_rect.inflate(20, 20)
-            pygame.draw.rect(screen, (255, 255, 255), bg_rect)
-            pygame.draw.rect(screen, (0, 0, 0), bg_rect, 2)
-            screen.blit(text, text_rect)
-            
+            draw_board(screen, solution_path[current_step])
+            if current_step == len(solution_path) - 1:
+                font = pygame.font.SysFont(None, 64)
+                text = font.render("SOLVED!", True, (0, 150, 0))
+                text_rect = text.get_rect(center=(BOARD_WIDTH/2, BOARD_HEIGHT/2))
+                pygame.draw.rect(screen, (255, 255, 255), text_rect.inflate(20, 20))
+                pygame.draw.rect(screen, (0, 0, 0), text_rect.inflate(20, 20), 2)
+                screen.blit(text, text_rect)
+
+        draw_ui(screen, current_step, len(solution_path), is_auto_playing, mouse_pos)
         pygame.display.flip()
         clock.tick(FPS)
-        
     pygame.quit()
