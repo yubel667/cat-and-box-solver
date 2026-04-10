@@ -21,7 +21,7 @@ GRID_LINE_COLOR = (60, 60, 200)
 CAT_COLOR = (255, 165, 0) # Orange
 BOX_COLOR = (210, 180, 140) # Light Brown
 EMPTY_CELL_COLOR = (0, 255, 255) # Cyan
-CONNECTION_COLOR = (200, 200, 200) # Light Gray
+CONNECTION_COLOR = EMPTY_CELL_COLOR
 TEXT_COLOR = (255, 255, 255)
 UI_BG_COLOR = (40, 40, 40)
 BTN_COLOR = (60, 60, 60)
@@ -91,7 +91,7 @@ def draw_piece(screen, p_id, orientation, loc_x, loc_y, alpha=255, angle=None):
                 py1 = center + gy1 * CELL_SIZE
                 px2 = center + gx2 * CELL_SIZE
                 py2 = center + gy2 * CELL_SIZE
-                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), 20)
+                pygame.draw.line(piece_surf, CONNECTION_COLOR, (px1, py1), (px2, py2), 80)
 
     # Cells
     for cell in piece.cells:
