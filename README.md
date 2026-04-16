@@ -12,9 +12,13 @@ You can find all questions (in ascii format) in questions/ folder and solution (
 
 There are 60 main levels (5 difficulties, 12 level each) and 40 bonus levels (4 difficulties, 10 level each).
 
-Below is a sample solution webp for the first puzzle.
+Below is the solution webp for the first puzzle to understand its rules:
 
 ![Level 01 Solution](solution/01.webp)
+
+Below is the solution webp for the last puzzle to understand its complexity:
+
+![Level 60 Solution](solution/60.webp)
 
 ## Rules & Useful links
 Click the image (youtube link) to get an overview.
